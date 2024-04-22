@@ -1,7 +1,8 @@
 {
     "version": 2,
     "builds": [
-      { "src": "vol_app.py", "use": "@vercel/python" }
+      { "src": "vol_app.py", "use": "@vercel/python",       "config": {
+        "runtime": "python3.9" }
     ],
     "routes": [
       { "src": "/(.*)", "dest": "/vol_app.py" }
