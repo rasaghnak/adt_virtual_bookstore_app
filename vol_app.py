@@ -349,4 +349,6 @@ book_schema = BookSchema()
 books_schema = BookSchema(many=True)
 
 if __name__ == '__main__':
-    vol_app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    vol_app.run(host='0.0.0.0', port=port, debug=False)
+
