@@ -4,6 +4,7 @@ numpy
 sqlalchemy
 flask
 Flask-sqlalchemy
+flask-bcrypt
 requests
 flask-marshmallow
 marshmallow-sqlalchemy
