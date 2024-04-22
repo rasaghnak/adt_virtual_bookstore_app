@@ -5,6 +5,7 @@ sqlalchemy
 flask
 Flask-sqlalchemy
 flask-bcrypt
+flask_login
 requests
 flask-marshmallow
 marshmallow-sqlalchemy
