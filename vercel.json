@@ -2,11 +2,11 @@
   "version": 2,
   "builds": [
     {
-      "src": "app.py", // Replace "app.py" with the name of your main Python file
+      "src": "vol_app.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
-    { "src": "/(.*)", "dest": "/app.py" } // Replace "app.py" with the name of your main Python file
+    { "src": "/(.*)", "dest": "/vol_app.py" }
   ]
 }
