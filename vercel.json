@@ -5,7 +5,7 @@
       "src": "vol_app.py",
       "use": "@vercel/python",
       "config": {
-        "runtime": "python3.9"
+        "runtime": "python3.8"  // Updated to a supported version
       }
     }
   ],
