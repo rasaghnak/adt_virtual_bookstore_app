@@ -112,26 +112,39 @@
 
 
 <script>
-    function submitForm() {
-        var bookId = $('#bookId').val();
-        var method = bookId ? 'PUT' : 'POST';
-        var url = '/admin/db-management' + (bookId ? '/' + bookId : '');
-        $.ajax({
-            url: url,
-            type: method,
-            contentType: 'application/json',
-            data: JSON.stringify(getFormData($('#addbookForm'))),
-            success: function(result) {
-                window.location.reload();
-            },
-            error: function(xhr) {
-                alert('Error: ' + xhr.status + ' ' + xhr.statusText);
-            }
-        });
-    }
+function submitForm() {
+    var bookId = $('#bookId').val();
+    var method = 'POST';
+    var url = '/books';  // Always use this URL for POST
+
+    $.ajax({
+        url: url,
+        type: method,
+        contentType: 'application/json',
+        data: JSON.stringify(getFormData($('#addbookForm'))),
+        success: function(result) {
+            window.location.reload();  // Reloads the page to show the new book in the list
+        },
+        error: function(xhr) {
+            alert('Error: ' + xhr.status + ' ' + xhr.statusText);
+        }
+    });
+}
+
+function getFormData($form){
+    var unindexed_array = $form.serializeArray();
+    var indexed_array = {};
+
+    $.map(unindexed_array, function(n, i){
+        indexed_array[n['name']] = n['value'];
+    });
+
+    return indexed_array;
+}
+
 
     function submitEditForm() {
-        var bookId = $('#edittitle').val();
+        var bookId = $('#editBookId').val();
         var method = 'PUT';
         var url = '/admin/db-management/' + bookId;
         $.ajax({

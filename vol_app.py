@@ -22,6 +22,10 @@ ma = Marshmallow(vol_app)
 login_manager = LoginManager(vol_app)
 login_manager.login_view = 'login'
 
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+
 
 @vol_app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -146,15 +150,30 @@ def home():
 
 @vol_app.route('/books', methods=['POST'])
 def add_book():
-    title = request.json['title']
-    author = request.json['author']
-    genre = request.json['genre']
-    new_book = Book(title, author, genre)
-    
-    db.session.add(new_book)
-    db.session.commit()
-
-    return book_schema.jsonify(new_book)
+    # Handling POST request to add a new book
+    data = request.get_json()  # This assumes you are sending JSON data
+    try:
+        new_book = Book(
+            publishing_year=int(data['publishing_year']),
+            title=data['title'],
+            author=data['author'],
+            language_code=data.get('language_code'),
+            author_rating=int(data.get('author_rating')) if data.get('author_rating') else None,
+            book_average_rating=float(data.get('book_average_rating')) if data.get('book_average_rating') else None,
+            book_ratings_count=int(data.get('book_ratings_count')) if data.get('book_ratings_count') else None,
+            genre=data['genre'],
+            gross_sales=float(data.get('gross_sales')) if data.get('gross_sales') else None,
+            publisher_revenue=float(data.get('publisher_revenue')) if data.get('publisher_revenue') else None,
+            sale_price=float(data.get('sale_price')) if data.get('sale_price') else None,
+            sales_rank=int(data.get('sales_rank')) if data.get('sales_rank') else None,
+            publisher=data.get('publisher'),
+            units_sold=int(data.get('units_sold')) if data.get('units_sold') else None
+        )
+        db.session.add(new_book)
+        db.session.commit()
+        return jsonify({"message": "New book added"}), 201
+    except Exception as e:
+        return jsonify({"message": str(e)}), 400
 
 @vol_app.route('/books', methods=['GET'])
 def get_books():
@@ -190,10 +209,10 @@ def delete_book(book_id):
 #                   'genre', 'gross_sales', 'publisher_revenue', 'sale_price', 
 #                   'sales_rank', 'publisher', 'units_sold'
 
-from flask import request, jsonify, redirect, url_for
 
-@vol_app.route('/admin/db-management', methods=['GET', 'POST', 'PUT', 'DELETE'])
-def admin_db_management():
+@vol_app.route('/admin/db-management/<int:bookId>', methods=['GET', 'POST', 'PUT', 'DELETE'])
+def admin_db_management(bookId=None):
+    logging.debug(f"Method: {request.method}, Book ID: {bookId}")
     # Authentication should ideally be handled by @login_required and check for is_admin
 
     if request.method == 'GET':
@@ -239,18 +258,25 @@ def admin_db_management():
 
     elif request.method == 'PUT':
         data = request.get_json()  # Use get_json() for safety
-        book_title = data.get('title')  # Use .get() to avoid KeyError
-        if book_title is None:
-            return jsonify({"message": "Missing book title"}), 400
+        book_id = data.get('id')  # Use .get() to avoid KeyError
 
-        book = Book.query.filter_by(title=book_title).first()
+        if book_id is None:
+            return jsonify({"message": "Missing book id"}), 400
+
+        # Assuming book_id is intended to be an integer, converting it to int might be necessary depending on how it's parsed from JSON
+        try:
+            book_id = int(book_id)
+        except ValueError:
+            return jsonify({"message": "Invalid book ID format"}), 400
+
+        book = Book.query.get(book_id)  # Use .get() for primary key lookup
         if not book:
             return jsonify({"message": "Book not found"}), 404
 
         try:
             for key, value in data.items():
-                # Prevent changing the title if you want to keep it immutable
-                if hasattr(book, key) and key != 'title':
+                # Prevent changing the id if you want to keep it immutable
+                if hasattr(book, key) and key != 'id':
                     setattr(book, key, value)
             db.session.commit()
             return jsonify({"message": "Book updated"}), 200
@@ -259,9 +285,8 @@ def admin_db_management():
             return jsonify({"message": str(e)}), 400
 
 
-    elif request.method == 'DELETE':
-        book_id = request.args.get('id')  # use query parameter for deletion
-        book = Book.query.get(book_id)
+    elif request.method == 'DELETE' and bookId:
+        book = Book.query.get(bookId)
         if not book:
             return jsonify({"message": "Book not found"}), 404
         db.session.delete(book)
