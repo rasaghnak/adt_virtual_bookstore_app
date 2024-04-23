@@ -8,7 +8,14 @@
 </head>
 <body>
     <div class="nav">
-    <h1>Manage Books</h1>
+        <div style="float: left;">
+            <h1>Manage Books</h1>
+        </div>
+        <div style="float: right;">
+            <button onclick="location.href='{{url_for('logout')}}'">Logout</button>
+        </div>
+        <div style="clear: both;"></div>
+    </div>
 <h2>Add Book</h2>
     <form id="addbookForm" onsubmit="submitForm(); return false;">
         <input type="hidden" id="bookId" name="id">
@@ -16,7 +23,7 @@
         <input type="text" id="title" name="title" placeholder="Title" required>
         <input type="text" id="author" name="author" placeholder="Author" required>
         <input type="text" id="language_code" name="language_code" placeholder="Language Code">
-        <input type="text" id="author_rating" name="author_rating" placeholder="Author Rating">
+        <input type="number" id="author_rating" name="author_rating" placeholder="Author Rating">
         <input type="number" step="0.01" id="book_average_rating" name="book_average_rating" placeholder="Average Rating">
         <input type="number" id="book_ratings_count" name="book_ratings_count" placeholder="Ratings Count">
         <input type="text" id="genre" name="genre" placeholder="Genre" required>
@@ -30,14 +37,14 @@
     </form>
 
     <!-- Edit Book Modal -->
-<div id="editBookModal" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeModal()">&times;</span>
-        <h2>Edit Book</h2>
-        <form id="editBookForm">
+    <div id="editBookModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Edit Book</h2>
+            <form id="editBookForm">
             <input type="hidden" id="editBookId" name="id">
             <input type="number" id="publishing_year" name="publishing_year" placeholder="Publishing Year" required>
-            <input type="text" id="title" name="title" placeholder="Title" required>
+            <input type="text" id="edittitle" name="title" placeholder="Title" required>
             <input type="text" id="author" name="author" placeholder="Author" required>
             <input type="text" id="language_code" name="language_code" placeholder="Language Code">
             <input type="text" id="author_rating" name="author_rating" placeholder="Author Rating">
@@ -50,10 +57,11 @@
             <input type="number" id="sales_rank" name="sales_rank" placeholder="Sales Rank">
             <input type="text" id="publisher" name="publisher" placeholder="Publisher">
             <input type="number" id="units_sold" name="units_sold" placeholder="Units Sold">
-            <button type="button" onclick="submitEditForm()">Update Book</button>
-        </form>
+            <button type="button" onclick="submitEditForm()">Save Changes</button>
+                <button type="button" onclick="closeModal()">Cancel</button>
+            </form>
+        </div>
     </div>
-</div>
     
 
 
@@ -103,88 +111,93 @@
 </table>
 
 
-    <script>
+<script>
     function submitForm() {
         var bookId = $('#bookId').val();
         var method = bookId ? 'PUT' : 'POST';
-        var url = '/admin/db-management' + (bookId ? '?id=' + bookId : '');
+        var url = '/admin/db-management' + (bookId ? '/' + bookId : '');
         $.ajax({
             url: url,
             type: method,
-            data: $('#bookForm').serialize(),
+            contentType: 'application/json',
+            data: JSON.stringify(getFormData($('#addbookForm'))),
             success: function(result) {
                 window.location.reload();
             },
             error: function(xhr) {
-                alert('Error: ' + xhr.responseText);
+                alert('Error: ' + xhr.status + ' ' + xhr.statusText);
+            }
+        });
+    }
+
+    function submitEditForm() {
+        var bookId = $('#edittitle').val();
+        var method = 'PUT';
+        var url = '/admin/db-management/' + bookId;
+        $.ajax({
+            url: url,
+            type: method,
+            contentType: 'application/json',
+            data: JSON.stringify(getFormData($('#editBookForm'))),
+            success: function(result) {
+                window.location.reload();
+            },
+            error: function(xhr) {
+                alert('Error: ' + xhr.status + ' ' + xhr.statusText);
             }
         });
     }
 
     function deleteBook(bookId) {
+        var url = '/admin/db-management/' + bookId;
         $.ajax({
-            url: '/admin/db-management?id=' + bookId,
+            url: url,
             type: 'DELETE',
             success: function(result) {
                 $('#book-' + bookId).remove();
             },
             error: function(xhr) {
-                alert('Error: ' + xhr.responseText);
+                alert('Error: ' + xhr.status + ' ' + xhr.statusText);
             }
         });
     }
 
-    function editBook(bookId) {
-    // Make an AJAX request to get the details of the book
-    
-    $.ajax({
-        url: '/admin/db-management?bookId=' + bookId,
-        type: 'GET',
-        success: function(bookData) {
-            // Assuming bookData is the object containing all book attributes
-            $('#bookId').val(bookData.id);
-            $('#publishing_year').val(bookData.publishing_year);
-            $('#title').val(bookData.title);
-            $('#author').val(bookData.author);
-            $('#language_code').val(bookData.language_code);
-            $('#author_rating').val(bookData.author_rating);
-            $('#book_average_rating').val(bookData.book_average_rating);
-            $('#book_ratings_count').val(bookData.book_ratings_count);
-            $('#genre').val(bookData.genre);
-            $('#gross_sales').val(bookData.gross_sales);
-            $('#publisher_revenue').val(bookData.publisher_revenue);
-            $('#sale_price').val(bookData.sale_price);
-            $('#sales_rank').val(bookData.sales_rank);
-            $('#publisher').val(bookData.publisher);
-            $('#units_sold').val(bookData.units_sold);
-            // Scroll to the form
-            window.scrollTo(0, 0);
-        },
-        error: function(xhr) {
-            alert('Error fetching book details: ' + xhr.responseText);
+    function getFormData($form){
+        var unindexed_array = $form.serializeArray();
+        var indexed_array = {};
+
+        $.map(unindexed_array, function(n, i){
+            indexed_array[n['name']] = n['value'];
+        });
+
+        return indexed_array;
+    }
+
+    function showEditBookModal(bookId) {
+            var row = $('#book-' + bookId);
+            $('#editBookId').val(bookId);
+            $('#editBookForm #publishing_year').val(row.find('td:eq(3)').text());
+            $('#editBookForm #title').val(row.find('td:eq(0)').text());
+            $('#editBookForm #author').val(row.find('td:eq(1)').text());
+            $('#editBookForm #language_code').val(row.find('td:eq(4)').text());
+            $('#editBookForm #author_rating').val(row.find('td:eq(5)').text());
+            $('#editBookForm #book_average_rating').val(row.find('td:eq(6)').text());
+            $('#editBookForm #book_ratings_count').val(row.find('td:eq(7)').text());
+            $('#editBookForm #genre').val(row.find('td:eq(2)').text());
+            $('#editBookForm #gross_sales').val(row.find('td:eq(8)').text());
+            $('#editBookForm #publisher_revenue').val(row.find('td:eq(9)').text());
+            $('#editBookForm #sale_price').val(row.find('td:eq(10)').text());
+            $('#editBookForm #sales_rank').val(row.find('td:eq(11)').text());
+            $('#editBookForm #publisher').val(row.find('td:eq(12)').text());
+            $('#editBookForm #units_sold').val(row.find('td:eq(13)').text());
+
+            document.getElementById('editBookModal').style.display = 'block';
         }
-    });
-    document.getElementById('editBookModal').style.display = 'block';
-}
 
-function submitEditForm() {
-        var bookId = $('#editBookId').val();
-        var method = bookId ? 'PUT' : 'POST';
-        var url = '/admin/db-management' + (bookId ? '?id=' + bookId : '');
-        $.ajax({
-            url: url,
-            type: method,
-            data: $('#editBookForm').serialize(), // Make sure this targets the correct form
-            success: function(result) {
-                window.location.reload();
-            },
-            error: function(xhr) {
-                alert('Error: ' + xhr.responseText);
-            }
-        });
-        closeModal();
-    }
+        function closeModal() {
+            document.getElementById('editBookModal').style.display = 'none';
+        }
+</script>
 
-    </script>
 </body>
 </html>

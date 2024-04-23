@@ -1,3 +1,7 @@
 venv
 APIkeys.py
 db_insert.py
+.vercel
+Books_Data_Clean.csv
+app.py
+schema.sql

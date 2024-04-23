@@ -53,6 +53,54 @@
             transform: rotateY(180deg);
             padding: 20px;
         }
+
+        #cart {
+    height: 100%;
+    width: 0; /* Start with the cart hidden */
+    position: fixed;
+    z-index: 1;
+    top: 0;
+    right: 0;
+    background-color: #f8f9fa; /* A light grey background */
+    overflow-x: hidden;
+    transition: 0.5s; /* Smooth transition effect */
+    box-shadow: -2px 0 5px rgba(0,0,0,0.5); /* Shadow effect to create depth */
+    padding-top: 75px; /* Place content below the navbar */
+}
+
+#cart h3 {
+    padding-left: 15px;
+    padding-right: 35px; /* Provide some spacing for the close button */
+    margin-bottom: 20px; /* Space before the list starts */
+    color: #004085; /* Match the navbar color */
+    border-bottom: 1px solid #ddd; /* A subtle separator */
+}
+
+#cart .btn-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    border: none; /* No border for a cleaner look */
+    background-color: transparent; /* No background */
+    color: #aaa; /* Light color for the button */
+    font-size: 20px;
+    cursor: pointer; /* Change cursor to pointer to indicate clickable */
+}
+
+#cart .list-group-item {
+    border: none; /* Remove borders for each list item */
+    border-bottom: 1px solid #ddd; /* Add a border at the bottom only */
+}
+
+#cart .btn-primary {
+    display: block; /* Full width */
+    width: 90%; /* Slightly less than full width for margin */
+    margin: 0 auto 20px; /* Center align and margin at the bottom */
+}
+
+#cart .btn-primary:hover {
+    opacity: 0.8; /* A nice touch on hover to indicate interactiveness */
+}
     </style>
 </head>
 <body>
@@ -67,10 +115,24 @@
                     <li class="nav-item active">
                         <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="url_for('logout')">logout</a>
+                    <li>
+                        <div id="cart">
+                            <h3>Your Cart</h3>
+                            <ul id="cartList" class="list-group"></ul>
+                            <button onclick="checkout()" class="btn btn-primary mt-3">Checkout</button>
+                        </div>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{url_for('logout')}}">logout</a>
+                    </li>
+                    
                 </ul>
+            </div>
+            <div id="cart">
+                <button onclick="closeCart()" class="btn btn-danger btn-sm btn-close">X Close</button>
+                <h3>Your Cart</h3>
+                <ul id="cartList" class="list-group"></ul>
+                <button onclick="checkout()" class="btn btn-primary mt-3">Checkout</button>
             </div>
         </div>
     </nav>
@@ -82,15 +144,14 @@
             {% for book in books %}
             <div class="col-md-4 book-card" data-title="{{ book.title | lower }}">
                 <div class="card">
-                    <div class="card-inner">
                         <div class="card-front p-2">
                             <h5 class="card-title">{{ book.title }}</h5>
                             <p class="card-text"><small class="text-muted">{{ book.genre }}</small></p>
+                            <button onclick="addToCart('{{ book.title }}')" class="btn btn-success btn-sm add-to-cart-btn">+</button>
                         </div>
                         <div class="card-back p-4">
                             <p>Author: {{ book.author }}</p>
                         </div>
-                    </div>
                 </div>
             </div>
             {% endfor %}
@@ -110,6 +171,45 @@
                 }
             });
         });
+        var cart = [];
+
+    function addToCart(title) {
+        cart.push(title);
+        updateCartView();
+        openCart();
+    }
+
+    function openCart() {
+            document.getElementById("cart").style.width = "250px"; // Open the cart sidebar
+        }
+
+        function closeCart() {
+            document.getElementById("cart").style.width = "0"; // Close the cart sidebar
+        }
+
+    function updateCartView() {
+        var cartList = document.getElementById('cartList');
+        cartList.innerHTML = ''; // Clear the list
+        cart.forEach(function(title) {
+            var li = document.createElement('li');
+            li.textContent = title;
+            li.className = 'list-group-item';
+            cartList.appendChild(li);
+        });
+    }
+
+    function checkout() {
+        if(cart.length === 0) {
+            alert('Your cart is empty.');
+            return;
+        }
+        // For simplicity, just show an alert
+        alert('Thank you for your purchase!');
+        // Clear the cart
+        cart = [];
+        updateCartView();
+        closeCart();
+    }
     </script>
 </body>
 </html>

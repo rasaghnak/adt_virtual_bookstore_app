@@ -220,7 +220,7 @@ def admin_db_management():
                 title=data['title'],
                 author=data['author'],
                 language_code=data.get('language_code', None),
-                author_rating=data.get('author_rating', None),
+                author_rating=int(data.get('author_rating', None)),
                 book_average_rating=float(data.get('book_average_rating', 0)),
                 book_ratings_count=int(data.get('book_ratings_count', 0)),
                 genre=data['genre'],
@@ -238,17 +238,26 @@ def admin_db_management():
             return jsonify({"message": str(e)}), 400
 
     elif request.method == 'PUT':
-        data = request.json
-        book = Book.query.get(data['id'])
+        data = request.get_json()  # Use get_json() for safety
+        book_title = data.get('title')  # Use .get() to avoid KeyError
+        if book_title is None:
+            return jsonify({"message": "Missing book title"}), 400
+
+        book = Book.query.filter_by(title=book_title).first()
         if not book:
             return jsonify({"message": "Book not found"}), 404
+
         try:
             for key, value in data.items():
-                setattr(book, key, value)
+                # Prevent changing the title if you want to keep it immutable
+                if hasattr(book, key) and key != 'title':
+                    setattr(book, key, value)
             db.session.commit()
             return jsonify({"message": "Book updated"}), 200
         except Exception as e:
+            db.session.rollback()  # Rollback in case of error
             return jsonify({"message": str(e)}), 400
+
 
     elif request.method == 'DELETE':
         book_id = request.args.get('id')  # use query parameter for deletion
@@ -309,7 +318,7 @@ def register():
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for('/login'))
+    return redirect(url_for('login'))
 
 
 @vol_app.route('/user_page')
@@ -338,15 +347,6 @@ def admin_books():
     books = Book.query.all()
     return render_template('admin_books.html', books=books)
 
-
-# Marshmallow schema
-# Schema for Books
-class BookSchema(ma.Schema):
-    class Meta:
-        fields = ('book_id', 'title', 'author', 'genre')
-
-book_schema = BookSchema()
-books_schema = BookSchema(many=True)
-
 if __name__ == '__main__':
-    vol_app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    vol_app.run(host='0.0.0.0', port=port, debug=False)
