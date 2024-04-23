@@ -2,8 +2,8 @@ pandas
 polygon-api-client
 numpy
 sqlalchemy
-gunicorn
-flask
+Gunicorn
+Flask
 Flask-sqlalchemy
 flask-bcrypt
 flask_login
